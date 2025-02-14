@@ -8,7 +8,8 @@ function HomePage() {
   const [showAddParticipant, setShowAddParticipant] = useState(false);
   const [formData, setFormData] = useState({
     nome: '',
-    pix: ''
+    pix: '',
+    confraria: ''
   });
   const [error, setError] = useState('');
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -43,18 +44,42 @@ function HomePage() {
         .from('participantes')
         .insert([{
           nome: formData.nome.trim(),
-          pix: formData.pix.trim() || null
+          pix: formData.pix.trim() || null,
+          confraria: formData.confraria
         }]);
 
       if (insertError) throw insertError;
 
       setShowAddParticipant(false);
-      setFormData({ nome: '', pix: '' });
+      setFormData({ nome: '', pix: '', confraria: '' });
       setError('');
       navigate('/participantes');
     } catch (error) {
       console.error('Error adding participant:', error);
       setError('Erro ao adicionar participante. Tente novamente.');
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingParticipant) return;
+
+    try {
+      const { error } = await supabase
+        .from('participantes')
+        .update({
+          nome: editForm.nome,
+          pix: editForm.pix,
+          confraria: editForm.confraria === 'sim' // Converte para booleano
+        })
+        .eq('id', editingParticipant.id);
+
+      if (error) throw error;
+      setShowEditModal(false);
+      setEditingParticipant(null);
+      loadParticipants();
+    } catch (error) {
+      console.error('Error updating participant:', error);
+      setError('Erro ao atualizar participante. Tente novamente.');
     }
   };
 
@@ -105,7 +130,7 @@ function HomePage() {
               <button
                 onClick={() => {
                   setShowAddParticipant(false);
-                  setFormData({ nome: '', pix: '' });
+                  setFormData({ nome: '', pix: '', confraria: '' });
                   setError('');
                 }}
                 className="text-gray-500 hover:text-gray-700"
@@ -148,11 +173,41 @@ function HomePage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confraria
+                </label>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="confraria"
+                      value="sim"
+                      checked={formData.confraria === 'sim'}
+                      onChange={(e) => setFormData({ ...formData, confraria: e.target.value })}
+                      className="form-radio"
+                    />
+                    <span className="ml-2">Sim</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="confraria"
+                      value="nao"
+                      checked={formData.confraria === 'nao'}
+                      onChange={(e) => setFormData({ ...formData, confraria: e.target.value })}
+                      className="form-radio"
+                    />
+                    <span className="ml-2">Não</span>
+                  </label>
+                </div>
+              </div>
+
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => {
                     setShowAddParticipant(false);
-                    setFormData({ nome: '', pix: '' });
+                    setFormData({ nome: '', pix: '', confraria: '' });
                     setError('');
                   }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
