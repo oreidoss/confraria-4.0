@@ -7,6 +7,7 @@ interface Participant {
   id: string;
   nome: string;
   pix: string;
+  confraria?: boolean;
 }
 
 function ParticipantsPage() {
@@ -15,7 +16,7 @@ function ParticipantsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
-  const [editForm, setEditForm] = useState({ nome: '', pix: '' });
+  const [editForm, setEditForm] = useState({ nome: '', pix: '', confraria: 'nao' });
   const [error, setError] = useState('');
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [participantToDelete, setParticipantToDelete] = useState<Participant | null>(null);
@@ -47,7 +48,11 @@ function ParticipantsPage() {
 
   const handleStartEdit = (participant: Participant) => {
     setEditingParticipant(participant);
-    setEditForm({ nome: participant.nome, pix: participant.pix });
+    setEditForm({ 
+      nome: participant.nome, 
+      pix: participant.pix, 
+      confraria: participant.confraria ? 'sim' : 'nao' 
+    });
     setShowEditModal(true);
   };
 
@@ -59,7 +64,8 @@ function ParticipantsPage() {
         .from('participantes')
         .update({
           nome: editForm.nome,
-          pix: editForm.pix
+          pix: editForm.pix,
+          confraria: editForm.confraria === 'sim'
         })
         .eq('id', editingParticipant.id);
 
@@ -145,6 +151,21 @@ function ParticipantsPage() {
     }
   };
 
+  // Função para atualizar o campo "Confraria"
+  const handleConfrariaChange = async (id: string, value: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('participantes')
+        .update({ confraria: value })
+        .eq('id', id);
+
+      if (error) throw error;
+      loadParticipants();
+    } catch (error) {
+      console.error('Error updating confraria:', error);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="flex items-center justify-between mb-6">
@@ -191,6 +212,33 @@ function ParticipantsPage() {
                     >
                       <Copy className="w-4 h-4" />
                     </button>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-sky-600 font-medium">Confraria:</span>
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name={`confraria-${participant.id}`}
+                          value="sim"
+                          checked={participant.confraria === true}
+                          onChange={() => handleConfrariaChange(participant.id, true)}
+                          className="form-radio"
+                        />
+                        <span className="ml-2">Sim</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name={`confraria-${participant.id}`}
+                          value="nao"
+                          checked={participant.confraria === false}
+                          onChange={() => handleConfrariaChange(participant.id, false)}
+                          className="form-radio"
+                        />
+                        <span className="ml-2">Não</span>
+                      </label>
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -273,11 +321,41 @@ function ParticipantsPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confraria
+                </label>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="confraria"
+                      value="sim"
+                      checked={editForm.confraria === 'sim'}
+                      onChange={(e) => setEditForm({ ...editForm, confraria: e.target.value })}
+                      className="form-radio"
+                    />
+                    <span className="ml-2">Sim</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="confraria"
+                      value="nao"
+                      checked={editForm.confraria === 'nao'}
+                      onChange={(e) => setEditForm({ ...editForm, confraria: e.target.value })}
+                      className="form-radio"
+                    />
+                    <span className="ml-2">Não</span>
+                  </label>
+                </div>
+              </div>
+
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => {
                     setShowAddModal(false);
-                    setEditForm({ nome: '', pix: '' });
+                    setEditForm({ nome: '', pix: '', confraria: 'nao' });
                     setError('');
                   }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
@@ -343,6 +421,36 @@ function ParticipantsPage() {
                   onChange={(e) => setEditForm({ ...editForm, pix: e.target.value })}
                   className="block w-full rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confraria
+                </label>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="confraria"
+                      value="sim"
+                      checked={editForm.confraria === 'sim'}
+                      onChange={(e) => setEditForm({ ...editForm, confraria: e.target.value })}
+                      className="form-radio"
+                    />
+                    <span className="ml-2">Sim</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="confraria"
+                      value="nao"
+                      checked={editForm.confraria === 'nao'}
+                      onChange={(e) => setEditForm({ ...editForm, confraria: e.target.value })}
+                      className="form-radio"
+                    />
+                    <span className="ml-2">Não</span>
+                  </label>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2">
