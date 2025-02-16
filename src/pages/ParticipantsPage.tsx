@@ -132,6 +132,36 @@ function ParticipantsPage() {
     }
   };
 
+  const handleAdminChange = async (id: string, value: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('participantes')
+        .update({ admin: value })
+        .eq('id', id);
+
+      if (error) throw error;
+      loadParticipants();
+    } catch (error) {
+      console.error('Error updating admin status:', error);
+    }
+  };
+
+  const handleDelete = async (participant: Participant) => {
+    if (window.confirm(`Tem certeza que deseja excluir o participante ${participant.nome}?`)) {
+      try {
+        const { error } = await supabase
+          .from('participantes')
+          .delete()
+          .eq('id', participant.id);
+
+        if (error) throw error;
+        loadParticipants();
+      } catch (error) {
+        console.error('Error deleting participant:', error);
+      }
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="flex items-center justify-between mb-6">
@@ -211,7 +241,7 @@ function ParticipantsPage() {
                     <input
                       type="checkbox"
                       checked={participant.admin || false}
-                      onChange={(e) => handleConfrariaChange(participant.id, e.target.checked)}
+                      onChange={(e) => handleAdminChange(participant.id, e.target.checked)}
                       className="form-checkbox"
                     />
                   </div>
