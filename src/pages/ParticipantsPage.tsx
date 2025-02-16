@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit, Trash2, X, Copy, UserPlus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -8,7 +8,7 @@ interface Participant {
   nome: string;
   pix: string;
   confraria?: boolean;
-  admin?: boolean; // New field added here
+  admin?: boolean;
 }
 
 function ParticipantsPage() {
@@ -19,8 +19,6 @@ function ParticipantsPage() {
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
   const [editForm, setEditForm] = useState({ nome: '', pix: '', confraria: 'nao', admin: false });
   const [error, setError] = useState('');
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-  const [participantToDelete, setParticipantToDelete] = useState<Participant | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -53,7 +51,7 @@ function ParticipantsPage() {
       nome: participant.nome, 
       pix: participant.pix, 
       confraria: participant.confraria ? 'sim' : 'nao',
-      admin: participant.admin || false // New field handled here
+      admin: participant.admin || false
     });
     setShowEditModal(true);
   };
@@ -68,7 +66,7 @@ function ParticipantsPage() {
           nome: editForm.nome,
           pix: editForm.pix,
           confraria: editForm.confraria === 'sim',
-          admin: editForm.admin // Ensure the admin field is handled
+          admin: editForm.admin
         })
         .eq('id', editingParticipant.id);
 
@@ -82,40 +80,6 @@ function ParticipantsPage() {
     }
   };
 
-  const handleDelete = async (participant: Participant) => {
-    setParticipantToDelete(participant);
-    setShowDeleteConfirmation(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!participantToDelete) return;
-
-    try {
-      // Primeiro remove o participante de todos os eventos (detalhes_evento)
-      const { error: detailsError } = await supabase
-        .from('detalhes_evento')
-        .delete()
-        .eq('participante_id', participantToDelete.id);
-
-      if (detailsError) throw detailsError;
-
-      // Depois remove o participante da tabela de participantes
-      const { error: participantError } = await supabase
-        .from('participantes')
-        .delete()
-        .eq('id', participantToDelete.id);
-
-      if (participantError) throw participantError;
-
-      setShowDeleteConfirmation(false);
-      setParticipantToDelete(null);
-      loadParticipants();
-    } catch (error) {
-      console.error('Error deleting participant:', error);
-      setError('Erro ao excluir participante. Tente novamente.');
-    }
-  };
-
   const handleAddParticipant = async () => {
     if (!editForm.nome.trim()) {
       setError('Por favor, preencha o nome do participante.');
@@ -123,7 +87,6 @@ function ParticipantsPage() {
     }
 
     try {
-      // Verifica se já existe um participante com o mesmo nome
       const { data: existingParticipant } = await supabase
         .from('participantes')
         .select('nome')
@@ -140,7 +103,7 @@ function ParticipantsPage() {
         .insert([{
           nome: editForm.nome.trim(),
           pix: editForm.pix.trim() || null,
-          admin: editForm.admin // Ensure the admin field is handled here
+          admin: editForm.admin
         }]);
 
       if (insertError) throw insertError;
@@ -155,7 +118,6 @@ function ParticipantsPage() {
     }
   };
 
-  // Função para atualizar o campo "Confraria"
   const handleConfrariaChange = async (id: string, value: boolean) => {
     try {
       const { error } = await supabase
@@ -503,4 +465,17 @@ function ParticipantsPage() {
                 </button>
                 <button
                   onClick={handleSaveEdit}
-                  className="px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg
+                  className="px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700"
+                >
+                  Salvar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default ParticipantsPage;
