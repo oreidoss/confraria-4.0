@@ -8,6 +8,7 @@ interface Participant {
   nome: string;
   pix: string;
   confraria?: boolean;
+  admin?: boolean; // New field added here
 }
 
 function ParticipantsPage() {
@@ -16,7 +17,7 @@ function ParticipantsPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
-  const [editForm, setEditForm] = useState({ nome: '', pix: '', confraria: 'nao' });
+  const [editForm, setEditForm] = useState({ nome: '', pix: '', confraria: 'nao', admin: false });
   const [error, setError] = useState('');
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [participantToDelete, setParticipantToDelete] = useState<Participant | null>(null);
@@ -51,7 +52,8 @@ function ParticipantsPage() {
     setEditForm({ 
       nome: participant.nome, 
       pix: participant.pix, 
-      confraria: participant.confraria ? 'sim' : 'nao' 
+      confraria: participant.confraria ? 'sim' : 'nao',
+      admin: participant.admin || false // New field handled here
     });
     setShowEditModal(true);
   };
@@ -65,7 +67,8 @@ function ParticipantsPage() {
         .update({
           nome: editForm.nome,
           pix: editForm.pix,
-          confraria: editForm.confraria === 'sim'
+          confraria: editForm.confraria === 'sim',
+          admin: editForm.admin // Ensure the admin field is handled
         })
         .eq('id', editingParticipant.id);
 
@@ -136,13 +139,14 @@ function ParticipantsPage() {
         .from('participantes')
         .insert([{
           nome: editForm.nome.trim(),
-          pix: editForm.pix.trim() || null
+          pix: editForm.pix.trim() || null,
+          admin: editForm.admin // Ensure the admin field is handled here
         }]);
 
       if (insertError) throw insertError;
 
       setShowAddModal(false);
-      setEditForm({ nome: '', pix: '' });
+      setEditForm({ nome: '', pix: '', confraria: 'nao', admin: false });
       setError('');
       loadParticipants();
     } catch (error) {
@@ -180,7 +184,7 @@ function ParticipantsPage() {
         <button
           onClick={() => {
             setShowAddModal(true);
-            setEditForm({ nome: '', pix: '' });
+            setEditForm({ nome: '', pix: '', confraria: 'nao', admin: false });
             setError('');
           }}
           className="flex items-center gap-1 bg-sky-600 text-white px-3 py-1.5 rounded text-sm hover:bg-sky-700 transition-colors"
@@ -240,6 +244,15 @@ function ParticipantsPage() {
                       </label>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-sky-600 font-medium">Admin:</span>
+                    <input
+                      type="checkbox"
+                      checked={participant.admin || false}
+                      onChange={(e) => handleConfrariaChange(participant.id, e.target.checked)}
+                      className="form-checkbox"
+                    />
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -278,7 +291,7 @@ function ParticipantsPage() {
               <button
                 onClick={() => {
                   setShowAddModal(false);
-                  setEditForm({ nome: '', pix: '' });
+                  setEditForm({ nome: '', pix: '', confraria: 'nao', admin: false });
                   setError('');
                 }}
                 className="text-gray-500 hover:text-gray-700"
@@ -351,11 +364,23 @@ function ParticipantsPage() {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Admin
+                </label>
+                <input
+                  type="checkbox"
+                  checked={editForm.admin}
+                  onChange={(e) => setEditForm({ ...editForm, admin: e.target.checked })}
+                  className="form-checkbox"
+                />
+              </div>
+
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => {
                     setShowAddModal(false);
-                    setEditForm({ nome: '', pix: '', confraria: 'nao' });
+                    setEditForm({ nome: '', pix: '', confraria: 'nao', admin: false });
                     setError('');
                   }}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
@@ -453,6 +478,18 @@ function ParticipantsPage() {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Admin
+                </label>
+                <input
+                  type="checkbox"
+                  checked={editForm.admin}
+                  onChange={(e) => setEditForm({ ...editForm, admin: e.target.checked })}
+                  className="form-checkbox"
+                />
+              </div>
+
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => {
@@ -466,50 +503,4 @@ function ParticipantsPage() {
                 </button>
                 <button
                   onClick={handleSaveEdit}
-                  className="px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700"
-                >
-                  Salvar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirmation && participantToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-4 max-w-sm w-full">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Confirmar Exclusão
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Tem certeza que deseja excluir {participantToDelete.nome}? Esta ação também removerá o participante de todos os eventos.
-              </p>
-              <div className="flex justify-center gap-3">
-                <button
-                  onClick={() => {
-                    setShowDeleteConfirmation(false);
-                    setParticipantToDelete(null);
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700"
-                >
-                  Excluir
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default ParticipantsPage;
+                  className="px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg
